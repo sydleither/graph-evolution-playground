@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 def print_info(df, measure):
     df = df.drop(columns=["optimized"])
     best = {x:0 for x in df["exp_name"].unique()}
-    for property in df["property"].unique():
+    for property in sorted(df["property"].unique()):
         dfp = df.loc[df["property"] == property]
         for objectives in dfp["objectives"].unique():
             dfpo = dfp.loc[dfp["objectives"] == objectives]
@@ -28,7 +28,7 @@ def plot_diversity(df, exp_name, measure):
     figure, axis = plt.subplots(4, 4, figsize=(24,24))
     row = 0
     col = 0
-    for property in df["property"].unique():
+    for property in sorted(df["property"].unique()):
         if property.endswith("distribution"):
             continue
         sns.boxplot(data=df.loc[df["property"] == property], x="objectives", y=measure, hue="exp_name", ax=axis[row][col])
