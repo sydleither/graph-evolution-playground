@@ -2,8 +2,12 @@ import json
 import os
 import sys
 
+import numpy as np
+from scipy.stats import norm
 
-def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, network_size=10, num_generations=1000, popsize=500, mutation_rate=0.01, crossover_rate=0.6):
+
+def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, network_size=10, num_generations=1000, 
+                      popsize=500, mutation_rate=0.01, crossover_rate=0.6):
     config = {
         "data_dir": exp_dir,
         "name": exp_name,
@@ -34,12 +38,14 @@ def parameter_tuning_diversity(exp_dir, network_size, num_generations, popsize, 
         os.makedirs(exp_dir)
 
     eval_funcs = {}
-    eval_funcs["c25"] = {"connectance": 0.25}
-    eval_funcs["c75"] = {"connectance": 0.75}
+    eval_funcs["c"] = {"connectance": 0.2}
+    eval_funcs["ccc"] = {"connectance": 0.2, "clustering_coefficient":0.4}
     eval_funcs["pip"] = {"positive_interactions_proportion": 0.25}
     eval_funcs["pipapis"] = {"positive_interactions_proportion": 0.25, "average_positive_interactions_strength": 0.25}
     eval_funcs["cpip"] = {"connectance": 0.2, "positive_interactions_proportion": 0.25}
-    eval_funcs["dd"] = {"in_degree_distribution": [0.0, 0.5, 0.3, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
+    ns_inv = 1/network_size
+    dd = [ns_inv*np.round(norm.pdf(x, loc=network_size/4, scale=network_size/10)/ns_inv) for x in range(network_size+1)]
+    eval_funcs["dd"] = {"in_degree_distribution": dd}
 
     config_names = []
     for exp_name,eval_func in eval_funcs.items():
@@ -47,19 +53,20 @@ def parameter_tuning_diversity(exp_dir, network_size, num_generations, popsize, 
         config_names.append(exp_name)
         os.makedirs(exp_dir+"/"+exp_name)
 
-    submit_output, analysis_output = generate_scripts_batch(exp_dir, config_names)
+    run_length = "long" if popsize*num_generations >= 500000 else "short"
+    submit_output, analysis_output = generate_scripts_batch(exp_dir, config_names, run_length)
     return submit_output, analysis_output
 
 
-def generate_scripts_batch(exp_name, config_names):
+def generate_scripts_batch(exp_name, config_names, run_length):
     code_location = os.getcwd()+"/"
     configs_path = "configs/"
 
     submit_output = []
     analysis_output = []
-    for config_name in config_names:
-        submit_output.append(f"sbatch {code_location}run_config.sb {configs_path}{exp_name}/{config_name}.json {exp_name}\n")
-        analysis_output.append(f"python3 graph-evolution/replicate_analysis.py {exp_name}/{config_name}\n")
+    for i in range(len(config_names)):
+        submit_output.append(f"sbatch {code_location}run_config_{run_length}.sb {configs_path}{exp_name}/{config_names[i]}.json\n")
+        analysis_output.append(f"python3 graph-evolution/replicate_analysis.py {exp_name}/{config_names[i]}\n")
 
     return submit_output, analysis_output
 
@@ -80,6 +87,7 @@ if __name__ == "__main__":
     experiment_name = sys.argv[1]
     submit_output = []
     analysis_output = []
+    #old
     if experiment_name == "diversity":
         for numgen in [500, 1000]:
             for popsize in [250, 500]:
@@ -97,6 +105,12 @@ if __name__ == "__main__":
         crossover_rates = [0.4, 0.5, 0.6, 0.7, 0.8]
         for cr in crossover_rates:
             s, a = parameter_tuning_diversity(experiment_name+f"_{str(cr)[-1]}", 10, 1000, 500, 0.01, cr)
+            submit_output += s
+            analysis_output += a
+    #new
+    if experiment_name == "popsize":
+        for popsize in [100, 250, 500, 750, 1000]:
+            s, a = parameter_tuning_diversity(experiment_name+f"_{popsize}pop", 10, 2*popsize, popsize, 0.01, 0.6)
             submit_output += s
             analysis_output += a
     else:
