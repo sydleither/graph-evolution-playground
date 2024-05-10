@@ -65,7 +65,7 @@ def generate_scripts_batch(exp_name, config_names, run_length):
     submit_output = []
     analysis_output = []
     for i in range(len(config_names)):
-        submit_output.append(f"sbatch {code_location}run_config_{run_length}.sb {configs_path}{exp_name}/{config_names[i]}.json\n")
+        submit_output.append(f"sbatch {code_location}run_config_{run_length}.sb {configs_path}{exp_name}/{config_names[i]}.json {exp_name}/{config_names[i]}\n")
         analysis_output.append(f"python3 graph-evolution/replicate_analysis.py {exp_name}/{config_names[i]}\n")
 
     return submit_output, analysis_output

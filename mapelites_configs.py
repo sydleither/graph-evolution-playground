@@ -42,6 +42,7 @@ def initial_performance(exp_dir, network_size, num_generations, initial_popsize,
 
     diversity_funcs = {}
     pareto_sizes = {}
+    subexp_names = {}
     table_vals = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     diversity_funcs["c"] = [{"positive_interactions_proportion": table_vals}, 
                             {"positive_interactions_proportion": table_vals, "average_positive_interactions_strength": table_vals},
@@ -49,15 +50,17 @@ def initial_performance(exp_dir, network_size, num_generations, initial_popsize,
     diversity_funcs["pip"] = [{"connectance": table_vals},
                               {"connectance": table_vals, "average_positive_interactions_strength": table_vals},
                               {"connectance": table_vals, "clustering_coefficient": table_vals[0:6]}]
-    pareto_sizes["c"] = [22, 2, 4]
-    pareto_sizes["pip"] = [22, 2, 4]
+    pareto_sizes["c"] = [44, 4, 8]
+    pareto_sizes["pip"] = [44, 4, 8]
+    subexp_names["c"] = ["pip", "pipapis", "pipcc"]
+    subexp_names["pip"] = ["c", "capis", "ccc"]
 
     config_names = []
     for exp_name,eval_func in eval_funcs.items():
         for i in range(len(diversity_funcs[exp_name])):
             diversity_func = diversity_funcs[exp_name][i]
             pareto_size = pareto_sizes[exp_name][i]
-            exp_namei = exp_name+str(i)
+            exp_namei = exp_name+"_"+subexp_names[exp_name][i]
             experiment_config(configs_path, exp_dir, exp_namei, eval_func, diversity_func, network_size, 
                               num_generations, initial_popsize, pareto_size, mutation_rate, crossover_rate)
             config_names.append(exp_namei)
@@ -69,15 +72,12 @@ def initial_performance(exp_dir, network_size, num_generations, initial_popsize,
 
 
 def generate_scripts_batch(exp_name, config_names):
-    code_location = os.getcwd()+"/"
     configs_path = "configs/"
 
     submit_output = []
     analysis_output = []
     for config_name in config_names:
-        for i in range(0,10):
-            submit_output.append(f"python3 graph-evolution/main.py {configs_path}{exp_name}/{config_name}.json {i}\n")
-        #submit_output.append(f"sbatch {code_location}run_config_short.sb {configs_path}{exp_name}/{config_name}.json\n")
+        submit_output.append(f"sbatch run_config_short.sb {configs_path}{exp_name}/{config_name}.json {exp_name}/{config_name}\n")
         analysis_output.append(f"python3 graph-evolution/replicate_analysis.py {exp_name}/{config_name}\n")
 
     return submit_output, analysis_output
@@ -100,7 +100,11 @@ if __name__ == "__main__":
     submit_output = []
     analysis_output = []
     if experiment_name == "performance":
-        s, a = initial_performance(experiment_name, 10, 1000, 100, 0.01, 0.6)
+        s, a = initial_performance(experiment_name, 10, 500000, 1000, 0.01, 0.6)
+        submit_output += s
+        analysis_output += a
+    elif experiment_name == "sample":
+        s, a = initial_performance(experiment_name, 10, 10000, 10000, 0.01, 0.6)
         submit_output += s
         analysis_output += a
     else:
