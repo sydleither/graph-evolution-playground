@@ -10,9 +10,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from eval_functions import functions
-from plot_utils import get_perfect_pop
-
 sns.set_palette(sns.color_palette("pastel"))
 warnings.filterwarnings("ignore")
 
@@ -108,26 +105,6 @@ def get_data(exp_dir):
                 fitnesses = pd.read_pickle(f"{full_path}/fitness_log.pkl")
                 fitnesses = {k:v[-1] for k,v in fitnesses.items()}
                 df_i = pd.read_csv(f"{full_path}/diversity.csv")
-                N = 500
-                if "nsga" not in experiment:
-                    if df_i["optimized_size"].values[0] > N:
-                        with open(f"{full_path}/final_pop.pkl", "rb") as f:
-                            population = pickle.load(f)
-                            perfect_pop = get_perfect_pop(population, fitnesses)
-                            perfect_pop_sample = sample(perfect_pop, N)
-                            rows = []
-                            for name in functions:
-                                typeCounter = Counter([organism.getProperty(name) 
-                                                    if "distribution" not in name 
-                                                    else tuple(organism.getProperty(name)) 
-                                                    for organism in perfect_pop_sample])
-                                entropy = -sum([(count/N)*np.log2(count/N) for count in typeCounter.values()])
-                                uniformity = entropy / np.log2(len(typeCounter))
-                                spread = len(typeCounter)
-                                final_pop_size = len(population)
-                                optimized_size = N
-                                rows.append([name, entropy, uniformity, spread, final_pop_size, optimized_size])
-                            df_i = pd.DataFrame(rows, columns=["property","entropy","uniformity","spread","final_pop_size","optimized_size"])
                 df_i["exp_name"] = experiment
                 df_i["objectives"] = param_combo
                 df_i["rep"] = replicate
