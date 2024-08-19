@@ -2,18 +2,16 @@ import json
 import os
 import sys
 
-import numpy as np
-from scipy.stats import norm
 
-
-def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, network_size=10, 
-                      num_generations=1000, popsize=500, mutation_rate=0.01, crossover_rate=0.6):
+def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, diversity_funcs, network_size, 
+                      num_generations, popsize, mutation_rate, crossover_rate):
     config = {
         "data_dir": exp_dir,
         "name": exp_name,
         "reps": 1,
         "save_data": 1,
         "plot_data": 0,
+        "track_diversity_over": diversity_funcs,
         "mutation_rate": mutation_rate,
         "mutation_odds": [1,2,1,2],
         "crossover_odds": [1,2,2],
@@ -30,26 +28,32 @@ def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, network_size=10,
         json.dump(config, f, indent=4)
 
 
-def parameter_tuning_diversity(exp_dir, network_size, num_generations, popsize, mutation_rate, crossover_rate):
+def nsga_improvements(exp_dir, network_size=10, num_generations=1000, popsize=500, mutation_rate=0.05, crossover_rate=0.6):
     configs_path = "configs/"
     if not os.path.exists(configs_path+exp_dir):
         os.makedirs(configs_path+exp_dir)
     if not os.path.exists(exp_dir):
         os.makedirs(exp_dir)
 
+    diversity_func_options = ["connectance", "clustering_coefficient", 
+                              "positive_interactions_proportion", "diameter", 
+                              "transitivity", "average_positive_interactions_strength", 
+                              "average_negative_interactions_strength"]
+
     eval_funcs = {}
-    eval_funcs["c"] = {"connectance": 0.2}
-    eval_funcs["ccc"] = {"connectance": 0.2, "clustering_coefficient":0.4}
+    eval_funcs["c"] = {"connectance": 0.8}
+    eval_funcs["ccc"] = {"connectance": 0.8, "clustering_coefficient":0.6}
     eval_funcs["pip"] = {"positive_interactions_proportion": 0.25}
     eval_funcs["pipapis"] = {"positive_interactions_proportion": 0.25, "average_positive_interactions_strength": 0.25}
-    eval_funcs["cpip"] = {"connectance": 0.2, "positive_interactions_proportion": 0.25}
-    ns_inv = 1/network_size
-    dd = [ns_inv*np.round(norm.pdf(x, loc=network_size/4, scale=network_size/10)/ns_inv) for x in range(network_size+1)]
-    eval_funcs["dd"] = {"in_degree_distribution": dd}
+    eval_funcs["cpip"] = {"connectance": 0.8, "positive_interactions_proportion": 0.25}
+    eval_funcs["cpipapis"] = {"connectance": 0.8, "positive_interactions_proportion": 0.25, "average_positive_interactions_strength": 0.25}
+    eval_funcs["cccapis"] = {"connectance": 0.8, "clustering_coefficient":0.6, "positive_interactions_proportion": 0.25}
 
     config_names = []
-    for exp_name,eval_func in eval_funcs.items():
-        experiment_config(configs_path, exp_dir, exp_name, eval_func, network_size, num_generations, popsize, mutation_rate, crossover_rate)
+    for exp_name, eval_func in eval_funcs.items():
+        diversity_funcs = [x for x in diversity_func_options if x not in eval_funcs[exp_name]]
+        experiment_config(configs_path, exp_dir, exp_name, eval_func, diversity_funcs, network_size, 
+                          num_generations, popsize, mutation_rate, crossover_rate)
         config_names.append(exp_name)
         os.makedirs(exp_dir+"/"+exp_name)
 
@@ -87,34 +91,8 @@ if __name__ == "__main__":
     experiment_name = sys.argv[1]
     submit_output = []
     analysis_output = []
-    #old
-    if experiment_name == "diversity":
-        for numgen in [500, 1000]:
-            for popsize in [250, 500]:
-                s, a = parameter_tuning_diversity(experiment_name+f"_{numgen}gen_{popsize}pop", 10, numgen, popsize, 0.005, 0.6)
-                submit_output += s
-                analysis_output += a
-    elif experiment_name == "mutation":
-        mutation_rates = [0.01, 0.05, 0.1]
-        file_names = [1, 2, 10]
-        for i in range(len(mutation_rates)):
-            s, a = parameter_tuning_diversity(experiment_name+f"_{file_names[i]}", 10, 1000, 500, mutation_rates[i], 0.6)
-            submit_output += s
-            analysis_output += a
-    elif experiment_name == "crossover":
-        crossover_rates = [0.4, 0.5, 0.6, 0.7, 0.8]
-        for cr in crossover_rates:
-            s, a = parameter_tuning_diversity(experiment_name+f"_{str(cr)[-1]}", 10, 1000, 500, 0.01, cr)
-            submit_output += s
-            analysis_output += a
-    #new
-    elif experiment_name == "popsize":
-        for popsize in [100, 250, 500, 750, 1000]:
-            s, a = parameter_tuning_diversity(experiment_name+f"_{popsize}pop", 10, 2*popsize, popsize, 0.01, 0.6)
-            submit_output += s
-            analysis_output += a
     if experiment_name == "nsga":
-        s, a = parameter_tuning_diversity(experiment_name, 10, 1000, 500, 0.05, 0.6)
+        s, a = nsga_improvements(experiment_name, 10, 1000, 500, 0.05, 0.6)
         submit_output += s
         analysis_output += a
     else:
