@@ -6,8 +6,8 @@ import numpy as np
 from scipy.stats import norm
 
 
-def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, network_size=10, num_generations=1000, 
-                      popsize=500, mutation_rate=0.01, crossover_rate=0.6):
+def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, network_size=10, 
+                      num_generations=1000, popsize=500, mutation_rate=0.01, crossover_rate=0.6):
     config = {
         "data_dir": exp_dir,
         "name": exp_name,
@@ -108,11 +108,15 @@ if __name__ == "__main__":
             submit_output += s
             analysis_output += a
     #new
-    if experiment_name == "popsize":
+    elif experiment_name == "popsize":
         for popsize in [100, 250, 500, 750, 1000]:
             s, a = parameter_tuning_diversity(experiment_name+f"_{popsize}pop", 10, 2*popsize, popsize, 0.01, 0.6)
             submit_output += s
             analysis_output += a
+    if experiment_name == "nsga":
+        s, a = parameter_tuning_diversity(experiment_name, 10, 1000, 500, 0.05, 0.6)
+        submit_output += s
+        analysis_output += a
     else:
         print("Invalid experiment name.")
         exit()
