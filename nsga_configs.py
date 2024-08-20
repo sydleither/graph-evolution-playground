@@ -42,12 +42,12 @@ def nsga_improvements(exp_dir, network_size=10, num_generations=1000, popsize=50
 
     eval_funcs = {}
     eval_funcs["c"] = {"connectance": 0.8}
-    eval_funcs["ccc"] = {"connectance": 0.8, "clustering_coefficient":0.6}
+    eval_funcs["ccc"] = {"connectance": 0.8, "clustering_coefficient":0.7}
     eval_funcs["pip"] = {"positive_interactions_proportion": 0.25}
     eval_funcs["pipapis"] = {"positive_interactions_proportion": 0.25, "average_positive_interactions_strength": 0.25}
     eval_funcs["cpip"] = {"connectance": 0.8, "positive_interactions_proportion": 0.25}
     eval_funcs["cpipapis"] = {"connectance": 0.8, "positive_interactions_proportion": 0.25, "average_positive_interactions_strength": 0.25}
-    eval_funcs["cccapis"] = {"connectance": 0.8, "clustering_coefficient":0.6, "positive_interactions_proportion": 0.25}
+    eval_funcs["cccapis"] = {"connectance": 0.8, "clustering_coefficient":0.7, "positive_interactions_proportion": 0.25}
 
     config_names = []
     for exp_name, eval_func in eval_funcs.items():
