@@ -4,7 +4,7 @@ import sys
 
 
 def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, diversity_funcs, network_size, 
-                      num_generations, popsize, mutation_rate, crossover_rate):
+                      num_generations, popsize, mutation_rate, crossover_rate, age_gap):
     config = {
         "data_dir": exp_dir,
         "name": exp_name,
@@ -18,6 +18,7 @@ def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, diversity_funcs, 
         "crossover_rate": crossover_rate,
         "weight_range": [-1,1],
         "popsize": popsize,
+        "age_gap": age_gap,
         "network_size": network_size,
         "num_generations": num_generations,
         "eval_funcs": eval_funcs
@@ -28,7 +29,7 @@ def experiment_config(save_dir, exp_dir, exp_name, eval_funcs, diversity_funcs, 
         json.dump(config, f, indent=4)
 
 
-def nsga_improvements(exp_dir, network_size=10, num_generations=1000, popsize=500, mutation_rate=0.05, crossover_rate=0.6):
+def nsga_improvements(exp_dir, network_size=10, num_generations=1000, popsize=500, mutation_rate=0.05, crossover_rate=0.6, age_gap=100):
     configs_path = "configs/"
     if not os.path.exists(configs_path+exp_dir):
         os.makedirs(configs_path+exp_dir)
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     submit_output = []
     analysis_output = []
     if experiment_name == "nsga":
-        s, a = nsga_improvements(experiment_name, 10, 1000, 500, 0.05, 0.6)
+        s, a = nsga_improvements(experiment_name, 10, 1500, 500, 0.05, 0.6, 100)
         submit_output += s
         analysis_output += a
     else:
